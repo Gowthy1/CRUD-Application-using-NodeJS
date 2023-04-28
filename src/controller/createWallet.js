@@ -1,33 +1,32 @@
-const walletService         = require('./../services/wallet')
-const nameMissing           = "Invalid input : Name is missing"
-const amountMissing         = "Invalid input : Amount is missing"
-const balanceMissing        = "Invalid input : Balance is missing"
-const descriptionMissing    = "Invalid input : Description is missing"
-const invalidWalletId       = "Invalid input : WalletId is mandatory"
+const walletService         = require('../services/wallet')
+const Errors                = require('./../Errors/index')
+const { httpStatusCode }    = require('./../constants')
+const { OK, CREATED, BAD_REQUEST, NOT_FOUND }   = httpStatusCode
+const { NAME_MISSING, AMOUNT_MISSING,WALLETID_MISSING, BALANCE_MISSING, DESCRIPTION_MISSING, WALLET_NOT_FOUND} = Errors
 
 const createNewWalletCtrl = (req, res) => {
     try {
         if(req?.body && req.body?.name && req.body?.balance){
             const { name, balance } = req.body
             const response = walletService.createNewWallet(name, balance);
-            res.status(200).send(response);
+            res.status(CREATED).send(response);
         } else {
             const errorResponse = []
             if(req.body === undefined){
-                errorResponse.push([nameMissing, balanceMissing])
+                errorResponse.push([NAME_MISSING, BALANCE_MISSING])
             } else {
                 if(req.body.name === undefined){
-                    errorResponse.push([nameMissing])
+                    errorResponse.push([Errors.NAME_MISSING])
                 }
                 if(req.body.balance === undefined){
-                    errorResponse.push([balanceMissing])
+                    errorResponse.push([Errors.BALANCE_MISSING])
                 }
             }
-            res.status(400).send({message: errorResponse});
+            res.status(BAD_REQUEST).send({message: errorResponse});
         }
     } catch (error) {
         console.log('[Ctrl] Error in createNewWalletCtrl: ', error);
-        res.status(400).send({message: error.message});
+        res.status(BAD_REQUEST).send({message: error.message});
     }
 }
 
@@ -36,17 +35,17 @@ const fetchWalletByIdCtrl = (req, res) => {
         if(req?.params?.walletId){
             const walletId = req.params.walletId
             const response = walletService.fetchWalletById(walletId);
-            res.status(200).send(response);
+            res.status(OK).send(response);
         } else {
-            res.status(400).send({message: invalidWalletId})
+            res.status(BAD_REQUEST).send({message: Errors.WALLETID_MISSING})
         }
     } catch (error) {
         console.log('[Ctrl] Error in fetchWalletByIdCtrl: ', error);
-        res.status(400).send({ message: error.message })
+        res.status(NOT_FOUND).send({ message: error.message })
     }
 }
 
-function createTransactionCtrl(req, res) {
+const createTransactionCtrl = (req, res) => {
     try{
         if(req?.params?.walletId && req?.body?.amount && req?.body?.description){
             const walletId      = req.params.walletId
@@ -55,47 +54,43 @@ function createTransactionCtrl(req, res) {
 
             const response = walletService.createTransaction(walletId, amount, description)
             console.log(' Transaction response: ', response)
-            res.status(200).send(response)
+            res.status(CREATED).send(response)
         }else{
             const errorResponse = []
 
             if(req.params.walletId === undefined){
-                errorResponse.push(invalidWalletId)
+                errorResponse.push(Errors.WALLETID_MISSING)
             }
             if(req.body.amount === undefined){
-                errorResponse.push(amountMissing)
+                errorResponse.push(Errors.AMOUNT_MISSING)
             }
             if(req.body.description === undefined){
-                errorResponse.push(descriptionMissing)
+                errorResponse.push(Errors.DESCRIPTION_MISSING)
             }
 
-            res.status(400).send({message: errorResponse})
+            res.status(BAD_REQUEST).send({message: errorResponse})
         }
     } catch(error) {
         console.log('[Ctrl] Error in createTransactionCtrl: ', error)
-        res.status(400).send({message:error.message})
+        res.status(NOT_FOUND).send({message:error.message})
     }
 }
 
-function fetchTransactionsForWalletCtrl(req, res) {
+const fetchTransactionsForWalletCtrl = (req, res) => {
     try {
         if(req?.params?.walletId){
             const walletId = req.params.walletId
             const response = walletService.fetchTransactionsForWallet(walletId);
-            if(response === undefined){
-                const message = "Wallet not found"
-                res.status(400).send({message});
-            }
-            res.status(200).send(response);
+            res.status(OK).send(response);
         } else {
             if(req.params.walletId === undefined){
-                errorResponse.push(invalidWalletId)
+                errorResponse.push(Errors.WALLETID_MISSING)
             }
-            res.status(400).send({ message: errorResponse });
+            res.status(BAD_REQUEST).send({ message: errorResponse });
         }
     } catch (error) {
         console.log('[Ctrl] Error in fetchTransactionsForWalletCtrl: ', error);
-        res.status(400).send({ message: error.message });
+        res.status(NOT_FOUND).send({ message: error.message });
     }
 }
 
